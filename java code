@@ -1,0 +1,487 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.*;
+
+public class TurningMachine {
+    public static void main(String[] args) {
+        // Define the products and their prices
+        final String NAPKIN = "N";
+        final String KNIFE = "K";
+        final String FORK = "F";
+        final String SPOON = "S";
+        final int NAPKIN_PRICE = 10;
+        final int KNIFE_PRICE = 25;
+        final int FORK_PRICE = 15;
+        final int SPOON_PRICE = 20;
+
+        // Define the full names of the products
+        final String NAPKIN_NAME = "Napkin";
+        final String KNIFE_NAME = "Knife";
+        final String FORK_NAME = "Fork";
+        final String SPOON_NAME = "Spoon";
+
+        // Define the accepted coins and their values
+        final String a = "a";
+        final String b = "b";
+        final String y = "y";
+        final int a_VALUE = 5;
+        final int b_VALUE = 10;
+        final int y_VALUE = 20;
+
+        // Create a hash map to store the prices of the products
+        Map<String, Integer> prices = new HashMap<>();
+        prices.put(NAPKIN, NAPKIN_PRICE);
+        prices.put(KNIFE, KNIFE_PRICE);
+        prices.put(FORK, FORK_PRICE);
+        prices.put(SPOON, SPOON_PRICE);
+
+        // Create a hash map to store the full names of the products
+        Map<String, String> product_names = new HashMap<>();
+        product_names.put(NAPKIN, NAPKIN_NAME);
+        product_names.put(KNIFE, KNIFE_NAME);
+        product_names.put(FORK, FORK_NAME);
+        product_names.put(SPOON, SPOON_NAME);
+
+        // Create a hash map to store the values of the coins
+        Map<String, Integer> coin_values = new HashMap<>();
+        coin_values.put(a, a_VALUE);
+        coin_values.put(b, b_VALUE);
+        coin_values.put(y, y_VALUE);
+
+
+        // Define the product inventory
+        final Map<String, Integer> PRODUCT_INVENTORY = new HashMap<>() {
+            {
+                put(NAPKIN, 20);
+                put(KNIFE, 20);
+                put(FORK, 20);
+                put(SPOON, 20);
+            }
+        };
+
+        // Create a hash map to store the product inventory
+        HashMap<String, Integer> inventory = new HashMap<>(PRODUCT_INVENTORY);
+
+
+        // Define the states of the Turing Machine
+        enum State {
+            START, READ, DISPENSE_PRODUCT, INSUFFICIENT_FUNDS, INVALID_INPUT, OUT_OF_STOCK, HALT
+        }
+
+
+        // Define the input symbols for the Turing Machine
+        enum InputSymbol {
+            a, b, y, N, F, S, K, C
+
+        }
+
+        // Define the tape symbols for the Turing Machine
+        enum TapeSymbol {
+            a, b, y, N, F, S, K, $
+        }
+
+        // Define the transition function for the Turing Machine
+        final Map<State, Map<InputSymbol, List<Object>>> transitionFunction = new HashMap<>() {
+            {
+                put(State.START, new HashMap<>() {{
+                    List<Object> coinATransition = new ArrayList<>(Arrays.asList(State.READ, TapeSymbol.a, 0));
+                    put(InputSymbol.a, coinATransition);
+                    List<Object> coinBTransition = new ArrayList<>(Arrays.asList(State.READ, TapeSymbol.b, 0));
+                    put(InputSymbol.b, coinBTransition);
+                    List<Object> coinYTransition = new ArrayList<>(Arrays.asList(State.READ, TapeSymbol.y, 0));
+                    put(InputSymbol.y, coinYTransition);
+                    List<Object> napkinTransition = new ArrayList<>(Arrays.asList(State.READ, TapeSymbol.N, 0));
+                    put(InputSymbol.N, napkinTransition);
+                    List<Object> knifeTransition = new ArrayList<>(Arrays.asList(State.READ, TapeSymbol.K, 0));
+                    put(InputSymbol.K, knifeTransition);
+                    List<Object> forkTransition = new ArrayList<>(Arrays.asList(State.READ, TapeSymbol.F, 0));
+                    put(InputSymbol.F, forkTransition);
+                    List<Object> spoonTransition = new ArrayList<>(Arrays.asList(State.READ, TapeSymbol.S, 0));
+                    put(InputSymbol.S, spoonTransition);
+                    List<Object> CTransition = new ArrayList<>(Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                    put(InputSymbol.C, CTransition);
+                }});
+
+                put(State.READ, new HashMap<>() {{
+                    put(InputSymbol.a, Arrays.asList(State.DISPENSE_PRODUCT, TapeSymbol.a, 1));
+                    put(InputSymbol.b, Arrays.asList(State.DISPENSE_PRODUCT, TapeSymbol.b, 1));
+                    put(InputSymbol.y, Arrays.asList(State.DISPENSE_PRODUCT, TapeSymbol.y, 1));
+                    put(InputSymbol.N, Arrays.asList(State.DISPENSE_PRODUCT, TapeSymbol.N, 1));
+                    put(InputSymbol.K, Arrays.asList(State.DISPENSE_PRODUCT, TapeSymbol.K, 1));
+                    put(InputSymbol.F, Arrays.asList(State.DISPENSE_PRODUCT, TapeSymbol.F, 1));
+                    put(InputSymbol.S, Arrays.asList(State.DISPENSE_PRODUCT, TapeSymbol.S, 1));
+                    put(InputSymbol.C, Arrays.asList(State.INVALID_INPUT, TapeSymbol.$, 0));
+                }});
+
+                put(State.DISPENSE_PRODUCT, new HashMap<>() {
+                    {
+                        put(InputSymbol.a, Arrays.asList(State.HALT, TapeSymbol.a, 1));
+                        put(InputSymbol.b, Arrays.asList(State.HALT, TapeSymbol.b, 1));
+                        put(InputSymbol.y, Arrays.asList(State.HALT, TapeSymbol.y, 1));
+                        put(InputSymbol.N, Arrays.asList(State.HALT, TapeSymbol.N, 1));
+                        put(InputSymbol.K, Arrays.asList(State.HALT, TapeSymbol.F, 1));
+                        put(InputSymbol.F, Arrays.asList(State.HALT, TapeSymbol.K, 1));
+                        put(InputSymbol.S, Arrays.asList(State.HALT, TapeSymbol.S, 1));
+                        put(InputSymbol.C, Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                    }
+                });
+
+                put(State.OUT_OF_STOCK, new HashMap<>() {
+                    {
+                        put(InputSymbol.a, Arrays.asList(State.OUT_OF_STOCK, TapeSymbol.$, 0));
+                        put(InputSymbol.b, Arrays.asList(State.OUT_OF_STOCK, TapeSymbol.$, 0));
+                        put(InputSymbol.y, Arrays.asList(State.OUT_OF_STOCK, TapeSymbol.$, 0));
+                        put(InputSymbol.N, Arrays.asList(State.OUT_OF_STOCK, TapeSymbol.$, 0));
+                        put(InputSymbol.K, Arrays.asList(State.OUT_OF_STOCK, TapeSymbol.$, 0));
+                        put(InputSymbol.F, Arrays.asList(State.OUT_OF_STOCK, TapeSymbol.$, 0));
+                        put(InputSymbol.S, Arrays.asList(State.OUT_OF_STOCK, TapeSymbol.$, 0));
+                        put(InputSymbol.C, Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                    }
+                });
+
+                put(State.INSUFFICIENT_FUNDS, new HashMap<>() {
+                    {
+                        put(InputSymbol.a, Arrays.asList(State.DISPENSE_PRODUCT, TapeSymbol.a, 1));
+                        put(InputSymbol.b, Arrays.asList(State.DISPENSE_PRODUCT, TapeSymbol.b, 1));
+                        put(InputSymbol.y, Arrays.asList(State.DISPENSE_PRODUCT, TapeSymbol.y, 1));
+                        put(InputSymbol.N, Arrays.asList(State.INSUFFICIENT_FUNDS, TapeSymbol.$, 0));
+                        put(InputSymbol.K, Arrays.asList(State.INSUFFICIENT_FUNDS, TapeSymbol.$, 0));
+                        put(InputSymbol.F, Arrays.asList(State.INSUFFICIENT_FUNDS, TapeSymbol.$, 0));
+                        put(InputSymbol.S, Arrays.asList(State.INSUFFICIENT_FUNDS, TapeSymbol.$, 0));
+                        put(InputSymbol.C, Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                    }
+                });
+
+
+                put(State.INVALID_INPUT, new HashMap<>() {
+                    {
+                        put(InputSymbol.a, Arrays.asList(State.HALT, TapeSymbol.a, 0));
+                        put(InputSymbol.b, Arrays.asList(State.HALT, TapeSymbol.b, 0));
+                        put(InputSymbol.y, Arrays.asList(State.HALT, TapeSymbol.y, 0));
+                        put(InputSymbol.N, Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                        put(InputSymbol.K, Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                        put(InputSymbol.F, Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                        put(InputSymbol.S, Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                        put(InputSymbol.C, Arrays.asList(State.DISPENSE_PRODUCT, TapeSymbol.$, 0));
+                    }
+                });
+
+
+                put(State.HALT, new HashMap<>() {
+                    {
+                        put(InputSymbol.a, Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                        put(InputSymbol.b, Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                        put(InputSymbol.y, Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                        put(InputSymbol.N, Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                        put(InputSymbol.K, Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                        put(InputSymbol.F, Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                        put(InputSymbol.S, Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                        put(InputSymbol.C, Arrays.asList(State.HALT, TapeSymbol.$, 0));
+                    }
+                });
+
+            }
+        };
+
+        int totalProductEarnings = 0;
+
+        boolean keepRunning = true;
+        while (keepRunning) {
+
+            // Show the menu of all the items in the inventory
+            System.out.println("\nVending Machine Inventory:");
+            try {
+                for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
+                    String product = entry.getKey();
+                    int count = entry.getValue();
+                    String productName = product_names.get(product);
+                    int currentProductPrice = prices.get(product); //issue found adding x2
+                    System.out.printf("%s: %s [$%d] [%d in stock]\n", product, productName, currentProductPrice, count);
+                    //prints the F, Fork, $15, 20 in stock
+                }
+            } catch (NullPointerException e) {
+                e.printStackTrace();
+            }
+            System.out.println("\nAccepted coins: a ($5), b ($10), y ($20)");
+
+            // Get the input string from the user
+            System.out.println("\nEnter your selection (e.g. 'aabyFNF'):");
+            Scanner scanner = new Scanner(System.in);
+            String input = scanner.nextLine().trim();
+
+
+            // Initialize the Turing Machine
+            // Define the current state of the Turing Machine
+            State currentState = State.START;
+            // Define the current position of the Turing Machine head
+            int headPosition = 0;
+            // Define the tape for the Turing Machine
+            List<TapeSymbol> tape = new ArrayList<>();
+
+            int currentBalance = 0;
+            int currentProductPrice = 0;
+            int totalEarnings = 0;
+
+
+            List<String> requestedProducts = new ArrayList<>();
+            List<TapeSymbol> change = new ArrayList<>();
+
+            // Write the input to the tape
+            for (char s : input.toCharArray()) {
+                switch (s) {
+                    case 'a' -> tape.add(TapeSymbol.a);
+                    case 'b' -> tape.add(TapeSymbol.b);
+                    case 'y' -> tape.add(TapeSymbol.y);
+                    case 'N' -> tape.add(TapeSymbol.N);
+                    case 'K' -> tape.add(TapeSymbol.K);
+                    case 'F' -> tape.add(TapeSymbol.F);
+                    case 'S' -> tape.add(TapeSymbol.S);
+                    case 'C' -> tape.add(TapeSymbol.$);
+                    default -> {
+                        tape.add(TapeSymbol.$);
+                        System.out.println("\nInvalid option inputted please review menu\n");
+                    }
+                }
+            }
+
+            // Run the Turing Machine until it halts
+            while (currentState != State.HALT) {
+                // Read the current tape symbol and determine the next transition
+                TapeSymbol currentSymbol = headPosition < tape.size() ? tape.get(headPosition) : TapeSymbol.$;
+                InputSymbol inputSymbol = switch (currentSymbol) {
+                    case a -> InputSymbol.a;
+                    case b -> InputSymbol.b;
+                    case y -> InputSymbol.y;
+                    case N -> InputSymbol.N;
+                    case K -> InputSymbol.K;
+                    case F -> InputSymbol.F;
+                    case S -> InputSymbol.S;
+                    case $ -> InputSymbol.C;
+                };
+
+                Map<InputSymbol, List<Object>> transitionMap = transitionFunction.get(currentState);
+                if (transitionMap != null) {
+                    List<Object> transition = transitionMap.get(inputSymbol);
+                    if (transition != null) {
+                        currentState = (State) transition.get(0);
+                        TapeSymbol newSymbol = (TapeSymbol) transition.get(1);
+                        int moveDirection = (int) transition.get(2);
+                        if (headPosition < tape.size()) {
+                            tape.set(headPosition, newSymbol);
+                        } else {
+                            tape.add(newSymbol);
+                        }
+                        headPosition += moveDirection;
+
+                        //Vending Machine
+                        if (currentState == State.READ) {
+                            StringBuilder currentSymbols = new StringBuilder();
+                            boolean outOfStockFound = false;
+                            while (headPosition < tape.size() && tape.get(headPosition) != TapeSymbol.$) {
+                                TapeSymbol symbol = tape.get(headPosition);
+                                currentSymbols.append(symbol.toString());
+
+                                //The owner's code
+                                if (currentSymbols.toString().equals("NKSFFSKS") && !outOfStockFound) {
+                                    System.out.println("\n------------------------------------------");
+                                    System.out.println("\nWelcome Owner!");
+                                    System.out.println("\nFunds and Sales Successfully Recorded!");
+                                    System.out.println("\n------------------------------------------");
+
+                                    // Write to the owner.txt file with a timestamp and current inventory
+                                    try {
+                                        BufferedWriter writer = new BufferedWriter(new FileWriter("owner.txt", true));
+                                        LocalDateTime timestamp = LocalDateTime.now();
+                                        String message = String.format("[%s]\nTotal Product Earnings: $%d\nCurrent Stock:\n", timestamp, totalProductEarnings);
+                                        writer.write(message);
+                                        for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
+                                            String product = entry.getKey();
+                                            int stock = entry.getValue();
+                                            message = String.format("%s (%s) - %d\n", product_names.get(product), product, stock);
+                                            writer.write(message);
+                                        }
+                                        writer.newLine();
+                                        writer.close();
+                                    } catch (IOException e) {
+                                        System.out.println("An error occurred while writing to owner.txt");
+                                    }
+                                    // Reset Stock and Earnings
+                                    inventory = new HashMap<>(PRODUCT_INVENTORY);
+                                    requestedProducts.clear();
+                                    currentProductPrice = 0;
+                                    totalProductEarnings = 0;
+                                    // Move the tape head to the end of the special code
+                                    // Reset the string builder
+                                    currentSymbols.setLength(0);
+                                    headPosition += 7;
+                                } else if (symbol == TapeSymbol.a || symbol == TapeSymbol.b || symbol == TapeSymbol.y) {
+                                    int coinValue = coin_values.get(symbol.toString());
+                                    currentBalance += coinValue;
+                                    System.out.println("Coin inserted: " + symbol + ", value: " + coinValue);
+                                } else if (symbol == TapeSymbol.N || symbol == TapeSymbol.K || symbol == TapeSymbol.F || symbol == TapeSymbol.S) {
+                                    String product = symbol.toString();
+                                    if (inventory.containsKey(product) && inventory.get(product) > 0 && inventory.get(product) <= 20) {
+                                        requestedProducts.add(product);
+                                        currentProductPrice += prices.get(product);
+                                        System.out.println("Requested Product Selected: " + product_names.get(product) + " - $" + prices.get(product));
+                                        outOfStockFound = false;
+                                    } else if (inventory.get(product) <= 0 || inventory.get(product) > 20) {
+                                        currentState = State.OUT_OF_STOCK;
+                                        System.out.printf("Sorry, %s is out of stock.\n", product_names.get(product));
+                                        System.out.printf("Refunded Change: $%d\n", currentBalance);
+                                        outOfStockFound = true;
+                                    }
+                                }
+                                headPosition++;
+                            }
+
+                            if (!currentSymbols.toString().trim().equals("") && !outOfStockFound) {
+                                System.out.println("\nTotal Inserted Coins: $" + currentBalance);
+                                System.out.printf("Total Product Price: $%d\n", currentProductPrice);
+                            }
+                            headPosition++;
+
+
+                        } else if (currentState == State.DISPENSE_PRODUCT) {
+                            System.out.println("\n...Processing...\n");
+
+                            if (currentBalance >= currentProductPrice && (!(currentBalance <= 0))) {
+
+                                // Dispense the products
+                                totalProductEarnings += currentProductPrice;
+
+
+                                System.out.print("Dispensing: ");
+                                int count = 0;
+                                for (String product : requestedProducts) {
+                                    if (inventory.get(product) <= 20 && inventory.get(product) > 0){
+                                        System.out.print(product_names.get(product));
+                                        count++;
+                                        if (count < requestedProducts.size()) {
+                                            System.out.print(", ");
+                                        }
+                                        inventory.put(product, inventory.get(product) - 1);
+
+                                    }
+                                }
+                                System.out.println();
+
+
+                                // Dispense change if necessary
+                                int changeAmount = currentBalance - currentProductPrice;
+
+                                if (changeAmount > 0) {
+
+                                    totalEarnings += currentProductPrice - changeAmount; // Add the amount paid to total earnings
+                                    System.out.printf("Dispensing change: $%d\n", changeAmount);
+                                }
+
+                                //Change into coins y, b, and a
+                                for (String coin : coin_values.keySet()) {
+                                    int coinValue = coin_values.get(coin);
+                                    while (changeAmount >= coinValue) {
+                                        if (coin.equals("y")) {
+                                            change.add(TapeSymbol.y);
+                                        } else if (coin.equals("b")) {
+                                            change.add(TapeSymbol.b);
+                                        } else {
+                                            change.add(TapeSymbol.a);
+                                        }
+                                        changeAmount -= coinValue;
+                                    }
+                                }
+
+                                //Then writes the change to the tape
+                                for (TapeSymbol symbol : change) {
+                                    if (headPosition < tape.size()) {
+                                        tape.set(headPosition, symbol);
+                                    } else {
+                                        tape.add(symbol);
+                                    }
+                                    headPosition += 1;
+                                }
+                                headPosition++;
+
+                            } else {
+                                currentState = State.INSUFFICIENT_FUNDS;
+
+                                // Check if any item can be purchased with current balance
+                                for (String product : requestedProducts) {
+                                    int productPrice = prices.get(product);
+                                    int changeAmount = currentBalance - productPrice;
+                                    if (currentBalance >= productPrice) {
+                                        // Dispense the product
+                                        System.out.println("Dispensing: " + product_names.get(product));
+                                        if (inventory.get(product) <= 20) {
+                                            inventory.put(product, inventory.get(product) - 1);
+                                        }
+                                        // Dispense change if necessary
+
+                                        totalProductEarnings += productPrice;
+
+                                        totalEarnings += productPrice; // Add the amount paid to total earnings
+
+                                        System.out.printf("Total Earnings: $%d\n", totalEarnings);
+                                        currentBalance = currentBalance - productPrice;
+
+
+                                        for (String coin : coin_values.keySet()) {
+                                            int coinValue = coin_values.get(coin);
+                                            while (changeAmount >= coinValue) {
+                                                if (coin.equals("y")) {
+                                                    change.add(TapeSymbol.y);
+                                                } else if (coin.equals("b")) {
+                                                    change.add(TapeSymbol.b);
+                                                } else {
+                                                    change.add(TapeSymbol.a);
+                                                }
+                                                changeAmount -= coinValue;
+                                            }
+                                        }
+
+                                        // Write the change to the tape
+                                        for (TapeSymbol symbol : change) {
+                                            if (headPosition < tape.size()) {
+                                                tape.set(headPosition, symbol);
+                                            } else {
+                                                tape.add(symbol);
+                                            }
+                                            headPosition += 1;
+                                        }
+                                    } else {
+                                        System.out.println("Insufficient funds. Please insert more coins.");
+                                        System.out.printf("Dispensing change: $%d\n", currentBalance);
+
+                                    }
+
+                                }
+
+                            }
+                        }
+                    } else {
+                        // No transition for the current input symbol, halt the Turing Machine
+                        currentState = State.HALT;
+                    }
+                } else {
+                    // No transition for the current state, halt the Turing Machine
+                    currentState = State.HALT;
+                }
+            }
+            System.out.println("\nDo you want to process another transaction? y/Y for yes | n/N for no");
+            String another_transaction = scanner.nextLine().trim();
+            if (another_transaction.equalsIgnoreCase("y")) {
+                keepRunning = true;
+            } else if (another_transaction.equalsIgnoreCase("n")) {
+                keepRunning = false;
+            }
+
+        }
+    }
+
+}
